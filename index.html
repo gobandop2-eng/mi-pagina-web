@@ -29,6 +29,11 @@ h2{color:var(--purple);font-family:Georgia,serif;margin:0 0 12px;font-size:clamp
 .promo h2{color:white}
 .promo p{line-height:1.6;font-size:17px}
 .notice{font-size:13px;color:#f1e4fa;line-height:1.5}
+#winOverlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(28,8,42,.88);backdrop-filter:blur(5px)}
+#winOverlay.hidden{display:none}.win-box{position:relative;overflow:hidden;width:min(480px,100%);padding:34px 25px;border:3px solid #ffe17a;border-radius:26px;background:linear-gradient(145deg,#4b176f,#812eaa);color:white;text-align:center;box-shadow:0 20px 70px #0008;animation:pop .55s ease-out}
+.win-box h2{color:#fff;font-size:clamp(27px,6vw,38px);margin:8px 0}.win-box .win-percent{font-size:76px;font-weight:900;color:#ffe17a;line-height:1;margin:12px 0}.win-box p{line-height:1.55}.win-box button{background:#ffe17a;color:#35114f;margin-top:10px}.spark{position:absolute;color:#ffe17a;font-size:24px;animation:twinkle 1.3s infinite alternate}.s1{top:12%;left:12%}.s2{top:20%;right:12%;animation-delay:.4s}.s3{bottom:18%;left:18%;animation-delay:.7s}.s4{bottom:12%;right:16%;animation-delay:.2s}
+@keyframes pop{from{transform:scale(.78);opacity:0}to{transform:scale(1);opacity:1}}@keyframes twinkle{from{transform:scale(.6) rotate(0);opacity:.35}to{transform:scale(1.35) rotate(35deg);opacity:1}}
+.timer-panel{margin:20px auto 0;padding:18px;border:2px dashed #ffe17a;border-radius:18px;background:#ffffff18;max-width:420px}.timer-label{font-size:14px;letter-spacing:1px}.countdown{font-size:clamp(36px,8vw,54px);font-weight:900;color:#ffe17a;font-variant-numeric:tabular-nums;margin:5px 0}.expired{background:linear-gradient(120deg,#4a4a4a,#777)!important}.promo .expired-message{display:none}.promo.expired .expired-message{display:block}.promo.expired .active-message{display:none}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:18px}
 .place{border:1px solid #e8dced;border-radius:15px;padding:17px;background:#fff}
 .place h3{margin:0 0 8px;color:var(--purple);font-size:18px}
@@ -42,6 +47,16 @@ footer strong{font-family:Georgia,serif;font-size:22px}
 </style>
 </head>
 <body>
+<div id="winOverlay" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+  <div class="win-box">
+    <span class="spark s1">✦</span><span class="spark s2">✧</span><span class="spark s3">✦</span><span class="spark s4">✧</span>
+    <div style="font-size:15px;letter-spacing:2px;color:#ffe7a1">¡SORPRESA!</div>
+    <h2 id="winTitle">¡GANASTE UN DESCUENTO!</h2>
+    <div class="win-percent">15 %</div>
+    <p>Tu beneficio tiene un tiempo limitado. Desliza hacia abajo para conocer cómo utilizarlo.</p>
+    <button type="button" onclick="closeWinAndScroll()">Ver mi descuento ↓</button>
+  </div>
+</div>
 <header>
   <div class="eyebrow" data-es="Una tradición del Centro Histórico de Quito" data-en="A tradition from Quito's Historic Center">Una tradición del Centro Histórico de Quito</div>
   <h1>El Ponche Quiteño</h1>
@@ -60,7 +75,7 @@ footer strong{font-family:Georgia,serif;font-size:22px}
 
     <div class="video" id="videoArea">
       <iframe
-        src="https://www.youtube nocookie.com/embed/FKPuRs57t2U"
+        src="https://www.youtube.com/embed/FKPuRs57t2U"
         title="El ponche quiteño - Asociación La Magolita"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         referrerpolicy="strict-origin-when-cross-origin"
@@ -72,8 +87,16 @@ footer strong{font-family:Georgia,serif;font-size:22px}
   <section class="card promo">
     <h2 data-es="¡Gracias por su colaboración!" data-en="Thank you for your support!">¡Gracias por su colaboración!</h2>
     <div class="percent">15 %</div>
-    <h2 data-es="DE DESCUENTO" data-en="ON">DE DESCUENTO</h2>
-    <p data-es="Disfrute de este beneficio en los establecimientos participantes del Centro Histórico de Quito." data-en="Enjoy this offer at participating businesses in Quito's Historic Center.">Disfrute de este beneficio en los establecimientos participantes del Centro Histórico de Quito.</p>
+    <h2 data-es="DE DESCUENTO" data-en="OFF">DE DESCUENTO</h2>
+    <div class="active-message">
+      <p data-es="Presenta esta pantalla en un establecimiento que confirme su participación para solicitar el beneficio." data-en="Show this screen at a business that confirms its participation to request the offer.">Presenta esta pantalla en un establecimiento que confirme su participación para solicitar el beneficio.</p>
+      <div class="timer-panel">
+        <div class="timer-label">⏳ TU DESCUENTO ESTÁ DISPONIBLE POR</div>
+        <div class="countdown" id="countdown">40:00</div>
+        <div class="timer-label" id="timerStatus">El tiempo comienza al escanear el código QR.</div>
+      </div>
+    </div>
+    <div class="expired-message"><h2>¡EL TIEMPO TERMINÓ!</h2><p>Este descuento ha caducado. Gracias por conocer y apoyar la tradición del ponche quiteño.</p></div>
     <p class="notice" data-es="Promoción propuesta, sujeta a la confirmación de los establecimientos aliados y a las condiciones que cada negocio establezca." data-en="Proposed promotion, subject to confirmation by participating businesses and each business's terms.">Promoción propuesta, sujeta a la confirmación de los establecimientos aliados y a las condiciones que cada negocio establezca.</p>
   </section>
 
@@ -107,6 +130,34 @@ function setLang(lang){
   document.querySelectorAll('[data-es]').forEach(el=>{el.textContent=el.dataset[lang]});
   document.getElementById('esBtn').classList.toggle('active',lang==='es');
   document.getElementById('enBtn').classList.toggle('active',lang==='en');
+}
+
+// El plazo de 40 minutos se conserva aunque la persona recargue la página.
+const TIMER_KEY='ponche_quiteno_expira_v1';
+const DURATION_MS=40*60*1000;
+let expiry=Number(localStorage.getItem(TIMER_KEY));
+if(!expiry || !Number.isFinite(expiry)){
+  expiry=Date.now()+DURATION_MS;
+  localStorage.setItem(TIMER_KEY,String(expiry));
+}
+function updateCountdown(){
+  const left=Math.max(0,expiry-Date.now());
+  const minutes=Math.floor(left/60000);
+  const seconds=Math.floor((left%60000)/1000);
+  const display=document.getElementById('countdown');
+  if(display) display.textContent=String(minutes).padStart(2,'0')+':'+String(seconds).padStart(2,'0');
+  if(left<=0){
+    document.querySelector('.promo').classList.add('expired');
+    const status=document.getElementById('timerStatus');
+    if(status) status.textContent='El beneficio ya no está disponible.';
+    clearInterval(timerInterval);
+  }
+}
+const timerInterval=setInterval(updateCountdown,1000);
+updateCountdown();
+function closeWinAndScroll(){
+  document.getElementById('winOverlay').classList.add('hidden');
+  document.querySelector('.promo').scrollIntoView({behavior:'smooth',block:'center'});
 }
 </script>
 
